@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { MapPin, User, ExternalLink, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import type * as Leaflet from 'leaflet';
 import Navbar from '@/components/layout/Navbar';
 import SearchCommand from '@/components/search/SearchCommand';
 import { createClient } from '@/lib/supabase/client';
@@ -19,8 +18,8 @@ export default function MapPage() {
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.LayerGroup | null>(null);
+  const mapInstanceRef = useRef<Leaflet.Map | null>(null);
+  const markersRef = useRef<Leaflet.LayerGroup | null>(null);
 
   // Indonesia center
   const defaultCenter: [number, number] = [-2.5, 118];
@@ -57,128 +56,136 @@ export default function MapPage() {
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    const map = L.map(mapRef.current, {
-      center: defaultCenter,
-      zoom: 5,
-      zoomControl: true,
-      attributionControl: false,
+    import('leaflet').then((L) => {
+      import('leaflet/dist/leaflet.css');
+
+      const map = L.map(mapRef.current!, {
+        center: defaultCenter,
+        zoom: 5,
+        zoomControl: true,
+        attributionControl: false,
+      });
+
+      // Dark tile layer
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+      }).addTo(map);
+
+      // Attribution in a subtle way
+      L.control.attribution({ position: 'bottomright', prefix: false })
+        .addAttribution('© <a href="https://www.openstreetmap.org/copyright" style="color:#64748b">OpenStreetMap</a> © <a href="https://carto.com/" style="color:#64748b">CARTO</a>')
+        .addTo(map);
+
+      markersRef.current = L.layerGroup().addTo(map);
+      mapInstanceRef.current = map;
     });
 
-    // Dark tile layer
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-    }).addTo(map);
-
-    // Attribution in a subtle way
-    L.control.attribution({ position: 'bottomright', prefix: false })
-      .addAttribution('© <a href="https://www.openstreetmap.org/copyright" style="color:#64748b">OpenStreetMap</a> © <a href="https://carto.com/" style="color:#64748b">CARTO</a>')
-      .addTo(map);
-
-    markersRef.current = L.layerGroup().addTo(map);
-    mapInstanceRef.current = map;
-
     return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-      markersRef.current = null;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        markersRef.current = null;
+      }
     };
   }, []);
 
   // Update markers when members change
   useEffect(() => {
-    if (!mapInstanceRef.current || !markersRef.current) return;
+    if (!mapInstanceRef.current || !markersRef.current || members.length === 0) return;
 
-    // Clear existing markers
-    markersRef.current.clearLayers();
+    import('leaflet').then((L) => {
+      // Clear existing markers
+      markersRef.current!.clearLayers();
 
-    const membersWithLocation = members.filter(
-      (m) => m.latitude !== null && m.longitude !== null
-    );
-
-    membersWithLocation.forEach((member) => {
-      const markerColor = member.is_alive ? '#10b981' : '#ef4444';
-      const borderColor = member.is_alive ? '#059669' : '#dc2626';
-      const initials = getInitials(member.full_name);
-
-      const icon = L.divIcon({
-        className: 'family-map-marker',
-        html: `
-          <div class="marker-container" style="position:relative; cursor:pointer;">
-            <div style="
-              width: 40px; height: 40px;
-              background: ${markerColor};
-              border: 3px solid ${borderColor};
-              border-radius: 50%;
-              display: flex; align-items: center; justify-content: center;
-              box-shadow: 0 2px 12px rgba(0,0,0,0.5);
-              transition: transform 0.2s;
-              overflow: hidden;
-            ">
-              ${
-                member.photo_url
-                  ? `<img src="${member.photo_url}" alt="${member.full_name}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;" />`
-                  : `<span style="color:#fff;font-size:11px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;">${initials}</span>`
-              }
-            </div>
-            <div class="marker-label" style="
-              position: absolute;
-              bottom: -22px; left: 50%;
-              transform: translateX(-50%);
-              white-space: nowrap;
-              padding: 2px 8px;
-              background: rgba(0,0,0,0.75);
-              backdrop-filter: blur(4px);
-              border-radius: 4px;
-              font-size: 10px;
-              color: #fff;
-              font-weight: 500;
-              font-family: 'Plus Jakarta Sans', sans-serif;
-              opacity: 0;
-              transition: opacity 0.2s;
-              pointer-events: none;
-            ">${member.full_name}</div>
-          </div>
-        `,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
-      });
-
-      const marker = L.marker([member.latitude!, member.longitude!], { icon });
-      
-      marker.on('click', () => {
-        setSelectedMember(member);
-      });
-
-      // Hover effects via CSS
-      marker.on('mouseover', (e) => {
-        const el = e.target.getElement();
-        if (el) {
-          const label = el.querySelector('.marker-label') as HTMLElement;
-          const circle = el.querySelector('.marker-container > div') as HTMLElement;
-          if (label) label.style.opacity = '1';
-          if (circle) circle.style.transform = 'scale(1.15)';
-        }
-      });
-      marker.on('mouseout', (e) => {
-        const el = e.target.getElement();
-        if (el) {
-          const label = el.querySelector('.marker-label') as HTMLElement;
-          const circle = el.querySelector('.marker-container > div') as HTMLElement;
-          if (label) label.style.opacity = '0';
-          if (circle) circle.style.transform = 'scale(1)';
-        }
-      });
-
-      markersRef.current!.addLayer(marker);
-    });
-
-    // Fit bounds if there are markers
-    if (membersWithLocation.length > 0) {
-      const bounds = L.latLngBounds(
-        membersWithLocation.map((m) => [m.latitude!, m.longitude!] as [number, number])
+      const membersWithLocation = members.filter(
+        (m) => m.latitude !== null && m.longitude !== null
       );
-      mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
-    }
+
+      membersWithLocation.forEach((member) => {
+        const markerColor = member.is_alive ? '#10b981' : '#ef4444';
+        const borderColor = member.is_alive ? '#059669' : '#dc2626';
+        const initials = getInitials(member.full_name);
+
+        const icon = L.divIcon({
+          className: 'family-map-marker',
+          html: `
+            <div class="marker-container" style="position:relative; cursor:pointer;">
+              <div style="
+                width: 40px; height: 40px;
+                background: ${markerColor};
+                border: 3px solid ${borderColor};
+                border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+                transition: transform 0.2s;
+                overflow: hidden;
+              ">
+                ${
+                  member.photo_url
+                    ? `<img src="${member.photo_url}" alt="${member.full_name}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;" />`
+                    : `<span style="color:#fff;font-size:11px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;">${initials}</span>`
+                }
+              </div>
+              <div class="marker-label" style="
+                position: absolute;
+                bottom: -22px; left: 50%;
+                transform: translateX(-50%);
+                white-space: nowrap;
+                padding: 2px 8px;
+                background: rgba(0,0,0,0.75);
+                backdrop-filter: blur(4px);
+                border-radius: 4px;
+                font-size: 10px;
+                color: #fff;
+                font-weight: 500;
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                opacity: 0;
+                transition: opacity 0.2s;
+                pointer-events: none;
+              ">${member.full_name}</div>
+            </div>
+          `,
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
+        });
+
+        const marker = L.marker([member.latitude!, member.longitude!], { icon });
+        
+        marker.on('click', () => {
+          setSelectedMember(member);
+        });
+
+        // Hover effects via CSS
+        marker.on('mouseover', (e) => {
+          const el = e.target.getElement();
+          if (el) {
+            const label = el.querySelector('.marker-label') as HTMLElement;
+            const circle = el.querySelector('.marker-container > div') as HTMLElement;
+            if (label) label.style.opacity = '1';
+            if (circle) circle.style.transform = 'scale(1.15)';
+          }
+        });
+        marker.on('mouseout', (e) => {
+          const el = e.target.getElement();
+          if (el) {
+            const label = el.querySelector('.marker-label') as HTMLElement;
+            const circle = el.querySelector('.marker-container > div') as HTMLElement;
+            if (label) label.style.opacity = '0';
+            if (circle) circle.style.transform = 'scale(1)';
+          }
+        });
+
+        markersRef.current!.addLayer(marker);
+      });
+
+      // Fit bounds if there are markers
+      if (membersWithLocation.length > 0) {
+        const bounds = L.latLngBounds(
+          membersWithLocation.map((m) => [m.latitude!, m.longitude!] as [number, number])
+        );
+        mapInstanceRef.current!.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+      }
+    });
   }, [members]);
 
   const membersWithLocation = members.filter(

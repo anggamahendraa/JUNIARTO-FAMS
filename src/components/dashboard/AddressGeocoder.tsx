@@ -2,8 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Search, Loader2, CheckCircle2, MapPin, AlertCircle } from 'lucide-react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import type * as Leaflet from 'leaflet';
 
 interface AddressGeocoderProps {
   address: string;
@@ -24,8 +23,8 @@ export default function AddressGeocoder({
   const [geocodeStatus, setGeocodeStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
+  const mapInstanceRef = useRef<Leaflet.Map | null>(null);
+  const markerRef = useRef<Leaflet.Marker | null>(null);
 
   const handleGeocode = useCallback(async () => {
     if (!address.trim()) return;
@@ -69,49 +68,55 @@ export default function AddressGeocoder({
   useEffect(() => {
     if (!hasCoords || !mapRef.current) return;
 
-    // Cleanup previous instance
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-      markerRef.current = null;
-    }
+    import('leaflet').then((L) => {
+      import('leaflet/dist/leaflet.css');
 
-    const map = L.map(mapRef.current, {
-      center: [latitude!, longitude!],
-      zoom: 15,
-      zoomControl: true,
-      attributionControl: false,
-      scrollWheelZoom: false,
+      // Cleanup previous instance
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        markerRef.current = null;
+      }
+
+      const map = L.map(mapRef.current!, {
+        center: [latitude!, longitude!],
+        zoom: 15,
+        zoomControl: true,
+        attributionControl: false,
+        scrollWheelZoom: false,
+      });
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+      }).addTo(map);
+
+      const markerIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `
+          <div style="
+            width: 24px; height: 24px;
+            background: #10b981;
+            border: 3px solid #059669;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+          "></div>
+        `,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      });
+
+      markerRef.current = L.marker([latitude!, longitude!], { icon: markerIcon }).addTo(map);
+      mapInstanceRef.current = map;
+
+      setTimeout(() => map.invalidateSize(), 100);
     });
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-    }).addTo(map);
-
-    const markerIcon = L.divIcon({
-      className: 'custom-marker',
-      html: `
-        <div style="
-          width: 24px; height: 24px;
-          background: #10b981;
-          border: 3px solid #059669;
-          border-radius: 50%;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-        "></div>
-      `,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-    });
-
-    markerRef.current = L.marker([latitude!, longitude!], { icon: markerIcon }).addTo(map);
-    mapInstanceRef.current = map;
-
-    setTimeout(() => map.invalidateSize(), 100);
 
     return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-      markerRef.current = null;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        markerRef.current = null;
+      }
     };
   }, [hasCoords, latitude, longitude]);
 

@@ -3,8 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { getGoogleMapsDirectionsUrl } from '@/lib/utils';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import type * as Leaflet from 'leaflet';
 
 interface MiniMapProps {
   latitude: number;
@@ -15,59 +14,67 @@ interface MiniMapProps {
 
 export default function ProfileMiniMap({ latitude, longitude, label, isAlive = true }: MiniMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
+  const mapInstanceRef = useRef<Leaflet.Map | null>(null);
 
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Cleanup previous instance
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
+    // Dynamically import leaflet only on the client to avoid 'window is not defined' SSR errors
+    import('leaflet').then((L) => {
+      // Import leaflet CSS
+      import('leaflet/dist/leaflet.css');
 
-    const map = L.map(mapRef.current, {
-      center: [latitude, longitude],
-      zoom: 14,
-      zoomControl: true,
-      attributionControl: false,
-      scrollWheelZoom: false,
+      // Cleanup previous instance
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+
+      const map = L.map(mapRef.current!, {
+        center: [latitude, longitude],
+        zoom: 14,
+        zoomControl: true,
+        attributionControl: false,
+        scrollWheelZoom: false,
+      });
+
+      // Dark tile layer (CartoDB Dark Matter)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+      }).addTo(map);
+
+      // Custom marker
+      const markerColor = isAlive ? '#10b981' : '#ef4444';
+      const markerIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `
+          <div style="
+            width: 24px; height: 24px;
+            background: ${markerColor};
+            border: 3px solid ${isAlive ? '#059669' : '#dc2626'};
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+          "></div>
+        `,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      });
+
+      L.marker([latitude, longitude], { icon: markerIcon })
+        .addTo(map)
+        .bindPopup(label || '');
+
+      mapInstanceRef.current = map;
+
+      // Fix tile rendering after mount
+      setTimeout(() => map.invalidateSize(), 100);
     });
-
-    // Dark tile layer (CartoDB Dark Matter)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-    }).addTo(map);
-
-    // Custom marker
-    const markerColor = isAlive ? '#10b981' : '#ef4444';
-    const markerIcon = L.divIcon({
-      className: 'custom-marker',
-      html: `
-        <div style="
-          width: 24px; height: 24px;
-          background: ${markerColor};
-          border: 3px solid ${isAlive ? '#059669' : '#dc2626'};
-          border-radius: 50%;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-        "></div>
-      `,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-    });
-
-    L.marker([latitude, longitude], { icon: markerIcon })
-      .addTo(map)
-      .bindPopup(label || '');
-
-    mapInstanceRef.current = map;
-
-    // Fix tile rendering after mount
-    setTimeout(() => map.invalidateSize(), 100);
 
     return () => {
-      map.remove();
-      mapInstanceRef.current = null;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
     };
   }, [latitude, longitude, label, isAlive]);
 
