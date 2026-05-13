@@ -265,12 +265,8 @@ body {
 /* ============================================
    ELDERLY-FRIENDLY
    ============================================ */
-button, 
-a,
-[role="button"] {
-  min-height: 44px;
-  min-width: 44px;
-}
+/* Removed global min-height: 44px as it caused layout breakage on small icons/links. 
+   Will apply specific sizing on interactive elements directly where needed. */
 
 /* Focus styles for accessibility */
 *:focus-visible {
