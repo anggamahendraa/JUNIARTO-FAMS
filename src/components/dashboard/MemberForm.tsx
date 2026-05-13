@@ -23,6 +23,7 @@ import AddressGeocoder from './AddressGeocoder';
 interface MemberFormProps {
   existingMembers: FamilyMember[];
   initialData?: FamilyMember;
+  familyId?: string;
   onSubmit: (data: Record<string, unknown>) => Promise<void>;
   isEdit?: boolean;
 }
@@ -30,6 +31,7 @@ interface MemberFormProps {
 export default function MemberForm({
   existingMembers,
   initialData,
+  familyId,
   onSubmit,
   isEdit = false,
 }: MemberFormProps) {
@@ -103,7 +105,7 @@ export default function MemberForm({
           <Upload className="w-4 h-4 text-emerald-400" />
           <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wide">Foto</h3>
         </div>
-        <PhotoUploader currentUrl={photoUrl} onUpload={setPhotoUrl} />
+        <PhotoUploader currentUrl={photoUrl} memberName={fullName} familyId={familyId} onUpload={setPhotoUrl} />
       </div>
 
       {/* Personal Info */}

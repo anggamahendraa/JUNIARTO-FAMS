@@ -3,29 +3,59 @@
 import { useState, useRef } from 'react';
 import { Upload, X, Loader2, ImageIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { cn, getInitials } from '@/lib/utils';
 
 interface PhotoUploaderProps {
   currentUrl: string;
+  memberName?: string;
+  familyId?: string;
   onUpload: (url: string) => void;
 }
 
-export default function PhotoUploader({ currentUrl, onUpload }: PhotoUploaderProps) {
+/**
+ * Foto disimpan di Supabase Storage dengan struktur folder:
+ *
+ *   family-photos/
+ *   ├── {family_id}/
+ *   │   ├── {nama-anggota}_{timestamp}.jpg
+ *   │   ├── {nama-anggota}_{timestamp}.png
+ *   │   └── ...
+ *   └── uncategorized/
+ *       └── {timestamp}_{filename}
+ *
+ * Ini memudahkan Anda mencari foto di Supabase Storage
+ * karena sudah terkelompok berdasarkan keluarga.
+ */
+export default function PhotoUploader({ currentUrl, memberName, familyId, onUpload }: PhotoUploaderProps) {
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentUrl || null);
   const [error, setError] = useState<string | null>(null);
 
+  // Membuat nama file yang rapi dan terklasifikasi
+  const buildFilePath = (file: File): string => {
+    const timestamp = Date.now();
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const safeName = (memberName || 'anggota')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/gi, '-')
+      .replace(/-+/g, '-')
+      .substring(0, 40);
+
+    const folder = familyId || 'uncategorized';
+    return `${folder}/${safeName}_${timestamp}.${ext}`;
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate
+    // Validasi tipe file
     if (!file.type.startsWith('image/')) {
-      setError('File harus berupa gambar');
+      setError('File harus berupa gambar (JPG, PNG, WebP)');
       return;
     }
+    // Validasi ukuran (maks 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError('Ukuran file maksimal 5MB');
       return;
@@ -34,15 +64,13 @@ export default function PhotoUploader({ currentUrl, onUpload }: PhotoUploaderPro
     setError(null);
     setIsUploading(true);
 
-    // Preview
+    // Preview lokal
     const reader = new FileReader();
     reader.onload = (e) => setPreview(e.target?.result as string);
     reader.readAsDataURL(file);
 
     try {
-      // Upload to Supabase Storage
-      const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-      const filePath = `members/${fileName}`;
+      const filePath = buildFilePath(file);
 
       const { error: uploadError } = await supabase.storage
         .from('family-photos')
@@ -53,7 +81,7 @@ export default function PhotoUploader({ currentUrl, onUpload }: PhotoUploaderPro
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Ambil URL publik
       const { data } = supabase.storage
         .from('family-photos')
         .getPublicUrl(filePath);
@@ -61,7 +89,7 @@ export default function PhotoUploader({ currentUrl, onUpload }: PhotoUploaderPro
       onUpload(data.publicUrl);
     } catch (err: unknown) {
       console.error('Upload error:', err);
-      setError('Gagal mengunggah foto. Pastikan bucket "family-photos" sudah dibuat.');
+      setError('Gagal mengunggah foto. Pastikan database sudah dikonfigurasi.');
       setPreview(currentUrl || null);
     } finally {
       setIsUploading(false);
@@ -90,20 +118,21 @@ export default function PhotoUploader({ currentUrl, onUpload }: PhotoUploaderPro
             <button
               type="button"
               onClick={handleRemove}
-              className="absolute top-1 right-1 p-1 bg-black/60 rounded-full text-white hover:bg-black/80 transition-all min-h-0 min-w-0"
+              className="absolute top-1 right-1 p-1 bg-black/60 rounded-full text-white hover:bg-black/80 transition-all"
+              style={{ minHeight: 'unset', minWidth: 'unset' }}
             >
-              <X className="w-3 h-3" />
+              <X className="w-3 h-3" style={{ minHeight: 'unset', minWidth: 'unset' }} />
             </button>
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-white/5">
-            <ImageIcon className="w-8 h-8 text-slate-600" />
+            <ImageIcon className="w-8 h-8 text-slate-600" style={{ minHeight: 'unset', minWidth: 'unset' }} />
           </div>
         )}
 
         {isUploading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-            <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+            <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" style={{ minHeight: 'unset', minWidth: 'unset' }} />
           </div>
         )}
       </div>
@@ -113,7 +142,7 @@ export default function PhotoUploader({ currentUrl, onUpload }: PhotoUploaderPro
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp,image/gif"
           onChange={handleFileSelect}
           className="hidden"
         />
@@ -123,10 +152,13 @@ export default function PhotoUploader({ currentUrl, onUpload }: PhotoUploaderPro
           disabled={isUploading}
           className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-slate-300 hover:bg-white/10 transition-all disabled:opacity-50"
         >
-          <Upload className="w-4 h-4" />
+          <Upload className="w-4 h-4" style={{ minHeight: 'unset', minWidth: 'unset' }} />
           {isUploading ? 'Mengunggah...' : 'Pilih Foto'}
         </button>
-        <p className="text-xs text-slate-500 mt-2">JPG, PNG, atau WebP. Maksimal 5MB.</p>
+        <p className="text-xs text-slate-500 mt-2">JPG, PNG, WebP, atau GIF. Maksimal 5MB.</p>
+        <p className="text-[10px] text-slate-600 mt-1">
+          📁 Foto akan disimpan di: family-photos/{familyId ? `${familyId.substring(0, 8)}...` : 'uncategorized'}/
+        </p>
         {error && (
           <p className="text-xs text-red-400 mt-1">{error}</p>
         )}

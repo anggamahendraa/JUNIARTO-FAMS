@@ -90,7 +90,7 @@ export default function NewMemberPage() {
           </select>
         </div>
 
-        <MemberForm existingMembers={members} onSubmit={handleSubmit} />
+        <MemberForm existingMembers={members} familyId={selectedFamilyId} onSubmit={handleSubmit} />
       </main>
     </div>
   );

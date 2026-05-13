@@ -105,6 +105,7 @@ export default function EditMemberPage() {
         <MemberForm
           existingMembers={members}
           initialData={member}
+          familyId={member.family_id}
           onSubmit={handleSubmit}
           isEdit
         />
