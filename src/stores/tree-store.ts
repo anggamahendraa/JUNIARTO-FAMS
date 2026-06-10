@@ -18,6 +18,7 @@ interface TreeState {
   // Selection
   selectedMemberId: string | null;
   highlightedMemberIds: string[];
+  focusedNodeId: string | null;
 
   // Actions
   setFamilies: (families: Family[]) => void;
@@ -26,6 +27,7 @@ interface TreeState {
   setGenerationFilter: (min: number | null, max: number | null) => void;
   selectMember: (id: string | null) => void;
   highlightMembers: (ids: string[]) => void;
+  focusNode: (id: string | null) => void;
   rebuildTree: () => void;
 }
 
@@ -45,6 +47,7 @@ export const useTreeStore = create<TreeState>((set, get) => ({
   // Selection
   selectedMemberId: null,
   highlightedMemberIds: [],
+  focusedNodeId: null,
 
   // Actions
   setFamilies: (families) => set({ families }),
@@ -78,6 +81,14 @@ export const useTreeStore = create<TreeState>((set, get) => ({
   highlightMembers: (ids) => {
     set({ highlightedMemberIds: ids });
     get().rebuildTree();
+  },
+
+  focusNode: (id) => {
+    set({ focusedNodeId: id });
+    // Reset it after a short delay so clicking the same node pans again
+    setTimeout(() => {
+      set({ focusedNodeId: null });
+    }, 1000);
   },
 
   rebuildTree: () => {

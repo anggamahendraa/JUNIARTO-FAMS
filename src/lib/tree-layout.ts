@@ -71,9 +71,9 @@ export function buildFamilyTree(
           id: `e-spouse-${edgeKey}`,
           source: member.id,
           target: member.spouse_id,
-          type: 'straight',
+          type: 'spouse',
           data: { relationshipType: 'spouse' as const },
-          style: { stroke: '#f59e0b', strokeWidth: 2, strokeDasharray: '5 5' },
+          style: { stroke: '#f59e0b', strokeWidth: 2 },
           animated: false,
         });
       }
@@ -85,17 +85,19 @@ export function buildFamilyTree(
   dagreGraph.setDefaultEdgeLabel(() => ({}));
   dagreGraph.setGraph({ 
     rankdir: 'TB', 
-    nodesep: 80, 
-    ranksep: 120,
-    marginx: 40,
-    marginy: 40,
+    nodesep: 150, // Increased to allow space for spouse edges and radial menus
+    ranksep: 180, // Increased for clearer generational separation
+    marginx: 50,
+    marginy: 50,
   });
 
   nodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
   });
 
-  // Only use parent-child edges for layout (not spouse)
+  // Apply all edges to layout (Dagre handles them well enough if configured)
+  // But we need spouses to be on the same rank, so we don't add spouse edges to Dagre,
+  // we just let them render based on the nodes' calculated positions.
   edges
     .filter((e) => e.data?.relationshipType === 'parent-child')
     .forEach((edge) => {

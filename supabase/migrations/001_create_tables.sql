@@ -152,14 +152,14 @@ DROP POLICY IF EXISTS "Users can view families they have access to" ON public.fa
 CREATE POLICY "Users can view families they have access to"
   ON public.families FOR SELECT
   USING (
-    auth.role() = 'authenticated' 
-    AND has_family_access(id, 'viewer')
+    auth.uid() = created_by OR
+    has_family_access(id, 'viewer')
   );
 
 DROP POLICY IF EXISTS "Authenticated users can create families" ON public.families;
 CREATE POLICY "Authenticated users can create families"
   ON public.families FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+  WITH CHECK (auth.uid() = created_by);
 
 DROP POLICY IF EXISTS "Family admins can update" ON public.families;
 CREATE POLICY "Family admins can update"

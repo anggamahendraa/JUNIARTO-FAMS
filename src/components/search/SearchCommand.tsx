@@ -86,7 +86,7 @@ export default function SearchCommand() {
 
   const handleSelect = (member: FamilyMember) => {
     selectMember(member.id);
-    openProfile();
+    useTreeStore.getState().focusNode(member.id);
     closeSearch();
     router.push('/tree');
   };

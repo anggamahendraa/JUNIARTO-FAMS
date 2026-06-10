@@ -3,14 +3,26 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { User } from 'lucide-react';
+import { useState, useCallback } from 'react';
 import type { FamilyNode } from '@/types';
 import { cn, getInitials } from '@/lib/utils';
+import RadialMenu, { RadialAction } from './RadialMenu';
 
 const FamilyMemberNode = memo(function FamilyMemberNode({
   data,
 }: NodeProps<FamilyNode>) {
   const { member, isSelected, isHighlighted } = data;
   const isMale = member.gender === 'male';
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleNodeClick = useCallback(() => {
+    setIsMenuOpen((prev) => !prev);
+  }, []);
+
+  const handleRadialAction = useCallback((action: RadialAction) => {
+    // Nanti dihubungkan dengan modal/fungsi yang sesungguhnya
+    console.log(`Action ${action} clicked for ${member.full_name}`);
+  }, [member.full_name]);
 
   return (
     <>
@@ -18,15 +30,17 @@ const FamilyMemberNode = memo(function FamilyMemberNode({
       <Handle type="target" position={Position.Top} className="!bg-transparent !border-0 !w-3 !h-3" />
 
       <div
+        onClick={handleNodeClick}
         className={cn(
           'group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer',
-          'bg-[var(--color-bg-card)] border hover:shadow-lg',
+          'bg-[var(--color-bg-card)] border hover:shadow-lg z-10',
           isSelected
             ? 'border-emerald-500/60 shadow-lg shadow-emerald-500/20 scale-105'
             : isHighlighted
               ? 'border-indigo-500/40 shadow-md shadow-indigo-500/10'
               : 'border-white/10 hover:border-white/20 hover:scale-[1.02]',
-          !member.is_alive && 'opacity-75'
+          !member.is_alive && 'opacity-75',
+          isMenuOpen && 'border-emerald-500/50 shadow-glow z-20'
         )}
         style={{ minWidth: 180, maxWidth: 220 }}
       >
@@ -102,6 +116,12 @@ const FamilyMemberNode = memo(function FamilyMemberNode({
           )}
         />
       </div>
+
+      <RadialMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        onAction={handleRadialAction}
+      />
 
       {/* Source handle */}
       <Handle type="source" position={Position.Bottom} className="!bg-transparent !border-0 !w-3 !h-3" />
