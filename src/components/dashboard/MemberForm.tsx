@@ -94,13 +94,13 @@ export default function MemberForm({
   };
 
   const inputClass =
-    'w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/25 transition-all';
-  const labelClass = 'block text-sm font-medium text-slate-300 mb-1.5';
+    'w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/25 transition-all shadow-sm';
+  const labelClass = 'block text-sm font-semibold text-slate-300 mb-2';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-8">
       {/* Photo */}
-      <div className="glass-card p-5 hover:transform-none hover:shadow-none">
+      <div className="glass-card p-6 md:p-8 hover:transform-none hover:shadow-none border-t-4 border-t-emerald-500/50">
         <div className="flex items-center gap-2 mb-4">
           <Upload className="w-4 h-4 text-emerald-400" />
           <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wide">Foto</h3>
@@ -109,13 +109,15 @@ export default function MemberForm({
       </div>
 
       {/* Personal Info */}
-      <div className="glass-card p-5 hover:transform-none hover:shadow-none">
-        <div className="flex items-center gap-2 mb-4">
-          <User className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wide">Data Pribadi</h3>
+      <div className="glass-card p-6 md:p-8 hover:transform-none hover:shadow-none border-t-4 border-t-indigo-500/50">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+          <div className="p-2 bg-indigo-500/10 rounded-lg">
+            <User className="w-5 h-5 text-indigo-400" />
+          </div>
+          <h3 className="text-base font-bold text-slate-100 uppercase tracking-wide">Data Pribadi</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
           <div className="md:col-span-2">
             <label className={labelClass}>
               Nama Lengkap <span className="text-red-400">*</span>
@@ -143,30 +145,32 @@ export default function MemberForm({
             <label className={labelClass}>
               Jenis Kelamin <span className="text-red-400">*</span>
             </label>
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 type="button"
                 onClick={() => setGender('male')}
                 className={cn(
-                  'flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border transition-all',
+                  'flex-1 flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all',
                   gender === 'male'
-                    ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300'
-                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                    ? 'bg-indigo-500/15 border-indigo-500 text-indigo-300 shadow-md shadow-indigo-500/20'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20'
                 )}
               >
-                Laki-laki
+                <div className={cn("w-3 h-3 rounded-full mb-1", gender === 'male' ? "bg-indigo-400" : "bg-slate-500")} />
+                <span className="text-sm font-medium">Laki-laki</span>
               </button>
               <button
                 type="button"
                 onClick={() => setGender('female')}
                 className={cn(
-                  'flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border transition-all',
+                  'flex-1 flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all',
                   gender === 'female'
-                    ? 'bg-pink-500/15 border-pink-500/40 text-pink-300'
-                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                    ? 'bg-pink-500/15 border-pink-500 text-pink-300 shadow-md shadow-pink-500/20'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20'
                 )}
               >
-                Perempuan
+                <div className={cn("w-3 h-3 rounded-full mb-1", gender === 'female' ? "bg-pink-400" : "bg-slate-500")} />
+                <span className="text-sm font-medium">Perempuan</span>
               </button>
             </div>
           </div>
@@ -187,13 +191,15 @@ export default function MemberForm({
       </div>
 
       {/* Birth/Death */}
-      <div className="glass-card p-5 hover:transform-none hover:shadow-none">
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wide">Kelahiran & Kematian</h3>
+      <div className="glass-card p-6 md:p-8 hover:transform-none hover:shadow-none border-t-4 border-t-rose-500/50">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+          <div className="p-2 bg-rose-500/10 rounded-lg">
+            <Calendar className="w-5 h-5 text-rose-400" />
+          </div>
+          <h3 className="text-base font-bold text-slate-100 uppercase tracking-wide">Kelahiran & Kematian</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
           <div>
             <label className={labelClass}>Tempat Lahir</label>
             <input
@@ -213,25 +219,32 @@ export default function MemberForm({
             />
           </div>
 
-          <div className="md:col-span-2">
-            <label className="flex items-center gap-3 cursor-pointer py-2">
+          <div className="md:col-span-2 pt-2 pb-4">
+            <button
+              type="button"
+              onClick={() => setIsAlive(!isAlive)}
+              className="flex items-center gap-4 cursor-pointer focus:outline-none"
+            >
               <div
                 className={cn(
-                  'w-10 h-6 rounded-full relative transition-colors',
+                  'w-14 h-8 rounded-full relative transition-colors duration-300 shadow-inner',
                   isAlive ? 'bg-emerald-500' : 'bg-red-500'
                 )}
               >
                 <div
                   className={cn(
-                    'w-4 h-4 rounded-full bg-white absolute top-1 transition-all',
-                    isAlive ? 'left-5' : 'left-1'
+                    'w-6 h-6 rounded-full bg-white absolute top-1 transition-all duration-300 shadow-md',
+                    isAlive ? 'left-7' : 'left-1'
                   )}
                 />
               </div>
-              <span className="text-sm text-slate-300">
-                {isAlive ? 'Masih Hidup' : 'Sudah Meninggal'}
-              </span>
-            </label>
+              <div>
+                <span className={cn("text-base font-bold block text-left", isAlive ? "text-emerald-400" : "text-red-400")}>
+                  {isAlive ? 'Masih Hidup' : 'Sudah Meninggal'}
+                </span>
+                <span className="text-xs text-slate-400 block text-left">Klik untuk mengubah status kehidupan</span>
+              </div>
+            </button>
           </div>
 
           {!isAlive && (
@@ -249,13 +262,15 @@ export default function MemberForm({
       </div>
 
       {/* Relationships */}
-      <div className="glass-card p-5 hover:transform-none hover:shadow-none">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wide">Hubungan Keluarga</h3>
+      <div className="glass-card p-6 md:p-8 hover:transform-none hover:shadow-none border-t-4 border-t-amber-500/50">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+          <div className="p-2 bg-amber-500/10 rounded-lg">
+            <Users className="w-5 h-5 text-amber-400" />
+          </div>
+          <h3 className="text-base font-bold text-slate-100 uppercase tracking-wide">Hubungan Keluarga</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
           <div>
             <label className={labelClass}>Ayah</label>
             <select
@@ -309,13 +324,15 @@ export default function MemberForm({
       </div>
 
       {/* Contact */}
-      <div className="glass-card p-5 hover:transform-none hover:shadow-none">
-        <div className="flex items-center gap-2 mb-4">
-          <Phone className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wide">Kontak</h3>
+      <div className="glass-card p-6 md:p-8 hover:transform-none hover:shadow-none border-t-4 border-t-cyan-500/50">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+          <div className="p-2 bg-cyan-500/10 rounded-lg">
+            <Phone className="w-5 h-5 text-cyan-400" />
+          </div>
+          <h3 className="text-base font-bold text-slate-100 uppercase tracking-wide">Kontak</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
           <div>
             <label className={labelClass}>Nomor Telepon</label>
             <input
@@ -339,10 +356,12 @@ export default function MemberForm({
       </div>
 
       {/* Biography */}
-      <div className="glass-card p-5 hover:transform-none hover:shadow-none">
-        <div className="flex items-center gap-2 mb-4">
-          <BookOpen className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wide">Biografi</h3>
+      <div className="glass-card p-6 md:p-8 hover:transform-none hover:shadow-none border-t-4 border-t-fuchsia-500/50">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+          <div className="p-2 bg-fuchsia-500/10 rounded-lg">
+            <BookOpen className="w-5 h-5 text-fuchsia-400" />
+          </div>
+          <h3 className="text-base font-bold text-slate-100 uppercase tracking-wide">Biografi</h3>
         </div>
         <textarea
           value={biography}
@@ -354,10 +373,12 @@ export default function MemberForm({
       </div>
 
       {/* Location */}
-      <div className="glass-card p-5 hover:transform-none hover:shadow-none">
-        <div className="flex items-center gap-2 mb-4">
-          <MapPin className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wide">
+      <div className="glass-card p-6 md:p-8 hover:transform-none hover:shadow-none border-t-4 border-t-emerald-500/50">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+          <div className="p-2 bg-emerald-500/10 rounded-lg">
+            <MapPin className="w-5 h-5 text-emerald-400" />
+          </div>
+          <h3 className="text-base font-bold text-slate-100 uppercase tracking-wide">
             {isAlive ? 'Lokasi Tempat Tinggal' : 'Lokasi Pemakaman'}
           </h3>
         </div>
